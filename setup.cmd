@@ -9,10 +9,10 @@ echo.
 
 :: ── Check winget (Windows Package Manager) ─────
 set WINGET=0
-where winget >nul 2>&1 && set WINGET=1
+winget --version >nul 2>&1 && set WINGET=1
 
 :: ── Step 1: Install Node.js if missing ─────────
-where node >nul 2>&1
+node --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo [*] Node.js not found - installing...
     if %WINGET%==1 (
@@ -24,8 +24,7 @@ if %errorlevel% neq 0 (
             pause
             exit /b 1
         )
-        echo [OK] Node.js installed - please restart this script
-        echo     (you may need to open a new terminal first)
+        echo [OK] Node.js installed - restart this script in a new terminal
         pause
         exit /b 0
     ) else (
@@ -39,7 +38,7 @@ for /f "tokens=*" %%v in ('node -v') do set NODE_VER=%%v
 echo [OK] Node.js found: %NODE_VER%
 
 :: ── Step 2: npm (comes with Node.js) ────────────
-where npm >nul 2>&1
+npm --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] npm not found - something is wrong with Node.js install.
     pause
@@ -49,7 +48,7 @@ for /f "tokens=*" %%v in ('npm -v') do set NPM_VER=%%v
 echo [OK] npm found: v%NPM_VER%
 
 :: ── Step 3: Install Git if missing ──────────────
-where git >nul 2>&1
+git --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo [*] Git not found - installing...
     if %WINGET%==1 (
@@ -61,8 +60,7 @@ if %errorlevel% neq 0 (
             pause
             exit /b 1
         )
-        echo [OK] Git installed - please restart this script
-        echo     (you may need to open a new terminal first)
+        echo [OK] Git installed - restart this script in a new terminal
         pause
         exit /b 0
     ) else (

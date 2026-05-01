@@ -8,7 +8,8 @@
   },
   "files": [
     "bin/cli.mjs",
-    "public/index.html"
+    "public/index.html",
+    "setup.cmd"
   ],
   "dependencies": {
     "@mariozechner/pi-coding-agent": "*"
