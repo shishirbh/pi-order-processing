@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pi-desktop</title>
+<style>
+  :root {
+    --bg: #1a1b1e;
+    --sidebar: #141517;
+    --card: #25262b;
+    --border: #2c2e33;
+    --text: #c1c2c5;
+    --muted: #909296;
+    --accent: #8ab4f8;
+    --accent2: #4ec9b0;
+    --user-bg: #2b3a4a;
+    --assistant-bg: #25262b;
+    --input-bg: #25262b;
+    --hover: #2c2e33;
+    --danger: #e06c75;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ────────────────────────────── */
+  .sidebar {
+    width: 260px;
+    background: var(--sidebar);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-header h1 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 12px;
+    letter-spacing: 0.5px;
+  }
+  .btn {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:hover { background: var(--hover); }
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    font-weight: 500;
+    justify-content: center;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+
+  .session-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .session-item {
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background 0.1s;
+  }
+  .session-item:hover { background: var(--hover); color: var(--text); }
+  .session-item.active {
+    background: var(--card);
+    color: var(--text);
+  }
+  .session-item .name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .session-item .delete {
+    opacity: 0;
+    color: var(--muted);
+    font-size: 16px;
+    padding: 0 4px;
+    transition: opacity 0.15s;
+  }
+  .session-item:hover .delete { opacity: 1; }
+  .session-item .delete:hover { color: var(--danger); }
+
+  /* ── Main ────────────────────────────────── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .message {
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.6;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .message.user { background: var(--user-bg); align-self: flex-end; }
+  .message.assistant { background: var(--assistant-bg); border: 1px solid var(--border); }
+  .message .role {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    color: var(--muted);
+  }
+  .message pre {
+    background: #1a1b1e;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    overflow-x: auto;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+  .message code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 13px;
+  }
+  .message p { margin: 4px 0; }
+  .message ul, .message ol { padding-left: 20px; margin: 4px 0; }
+  .message .tool-tag {
+    display: inline-block;
+    background: #2d4a3e;
+    color: var(--accent2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    margin: 4px 0;
+  }
+
+  /* ── Input ────────────────────────────────── */
+  .input-area {
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--border);
+  }
+  .input-wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    gap: 8px;
+  }
+  .input-wrapper textarea {
+    flex: 1;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    resize: none;
+    min-height: 44px;
+    max-height: 200px;
+    outline: none;
+    line-height: 1.4;
+  }
+  .input-wrapper textarea:focus { border-color: var(--accent); }
+  .input-wrapper button {
+    padding: 0 20px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #000;
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .input-wrapper button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 14px;
+    text-align: center;
+    padding: 40px;
+  }
+  .empty-state p { max-width: 400px; }
+
+  .thinking {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ──────────────────────────── -->
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1>💬 Conversations</h1>
+    <button class="btn btn-primary" onclick="newSession()">+ New Chat</button>
+  </div>
+  <div class="session-list" id="sessionList"></div>
+</div>
+
+<!-- ── Main ─────────────────────────────── -->
+<div class="main">
+  <div class="messages" id="messages">
+    <div class="empty-state">
+      <p>Select a conversation or start a new one.<br>Knowledge base: ~103 vendors loaded.</p>
+    </div>
+  </div>
+  <div class="input-area">
+    <div class="input-wrapper">
+      <textarea id="promptInput" placeholder="Ask about a vendor, order process, or claim..." rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
+      <button id="sendBtn" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────
+let activeSessionId = null;
+let isStreaming = false;
+
+// ── API ───────────────────────────────────────────────────────────
+const API = window.location.origin + "/api";
+
+async function fetchJSON(url, opts) {
+  const res = await fetch(url, opts);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function loadSessions() {
+  const list = await fetchJSON(`${API}/sessions`);
+  const el = document.getElementById("sessionList");
+  el.innerHTML = list.map(s => `
+    <div class="session-item${s.path === activeSessionId || s.id === activeSessionId ? ' active' : ''}"
+         onclick="switchSession('${(s.path||s.id).replace(/'/g,"\\'")}')">
+      <span class="name">${esc(s.name || 'Untitled')}</span>
+      <span class="delete" onclick="event.stopPropagation();deleteSession('${(s.path||s.id).replace(/'/g,"\\'")}')">&times;</span>
+    </div>
+  `).join("") || '<div style="padding:12px;color:var(--muted);font-size:13px">No conversations yet</div>';
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Session Management ────────────────────────────────────────────
+async function newSession() {
+  const data = await fetchJSON(`${API}/sessions`, { method: "POST" });
+  activeSessionId = data.id;
+  document.getElementById("messages").innerHTML = "";
+  await loadSessions();
+  document.getElementById("promptInput").focus();
+}
+
+async function switchSession(id) {
+  activeSessionId = id;
+  document.getElementById("messages").innerHTML = '<div class="empty-state"><p>Loading...</p></div>';
+  try {
+    const msgs = await fetchJSON(`${API}/sessions/${encodeURIComponent(id)}/messages`);
+    renderMessages(msgs);
+  } catch {
+    document.getElementById("messages").innerHTML = "";
+  }
+  await loadSessions();
+  document.getElementById("promptInput").focus();
+}
+
+async function deleteSession(id) {
+  if (!confirm("Delete this conversation?")) return;
+  if (activeSessionId === id) {
+    activeSessionId = null;
+    document.getElementById("messages").innerHTML = '<div class="empty-state"><p>Select a conversation or start a new one.</p></div>';
+  }
+  await loadSessions();
+}
+
+// ── Messages ──────────────────────────────────────────────────────
+function renderMessages(msgs) {
+  const el = document.getElementById("messages");
+  el.innerHTML = msgs.map(m => `
+    <div class="message ${m.role}">
+      <div class="role">${m.role}</div>
+      <div class="content">${formatContent(m.content || '')}</div>
+    </div>
+  `).join("");
+  el.scrollTop = el.scrollHeight;
+}
+
+function formatContent(text) {
+  // Basic markdown-like formatting
+  return esc(text)
+    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+
+function addMessage(role, content) {
+  const el = document.getElementById("messages");
+  // Remove empty state
+  const empty = el.querySelector(".empty-state");
+  if (empty) empty.remove();
+
+  const div = document.createElement("div");
+  div.className = `message ${role}`;
+  div.innerHTML = `<div class="role">${role}</div><div class="content">${formatContent(content)}</div>`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+  return div;
+}
+
+// ── Send & Stream ─────────────────────────────────────────────────
+async function sendMessage() {
+  if (isStreaming) return;
+  const input = document.getElementById("promptInput");
+  const prompt = input.value.trim();
+  if (!prompt) return;
+
+  if (!activeSessionId) {
+    await newSession();
+  }
+
+  input.value = "";
+  input.style.height = "auto";
+  document.getElementById("sendBtn").disabled = true;
+  isStreaming = true;
+
+  addMessage("user", prompt);
+  const assistantDiv = addMessage("assistant", "");
+  const contentEl = assistantDiv.querySelector(".content");
+  let buffer = "";
+
+  try {
+    const res = await fetch(`${API}/sessions/${encodeURIComponent(activeSessionId)}/prompt`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let leftover = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      leftover += decoder.decode(value, { stream: true });
+      const lines = leftover.split("\n");
+      leftover = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        try {
+          const data = JSON.parse(line.slice(6));
+          if (data.type === "text") {
+            buffer += data.delta;
+            contentEl.innerHTML = formatContent(buffer);
+          } else if (data.type === "tool_start") {
+            const tag = document.createElement("span");
+            tag.className = "tool-tag";
+            tag.textContent = `🔧 ${data.tool}`;
+            contentEl.appendChild(tag);
+          } else if (data.type === "done") {
+            // stream complete
+          } else if (data.type === "error") {
+            contentEl.innerHTML += `<p style="color:var(--danger)">Error: ${esc(data.error)}</p>`;
+          }
+        } catch {}
+      }
+      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+    }
+    contentEl.innerHTML = formatContent(buffer);
+  } catch (e) {
+    contentEl.innerHTML += `<p style="color:var(--danger)">Connection error: ${esc(e.message)}</p>`;
+  }
+
+  isStreaming = false;
+  document.getElementById("sendBtn").disabled = false;
+  document.getElementById("promptInput").focus();
+  loadSessions(); // refresh list
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+loadSessions();
+document.getElementById("promptInput").focus();
+
+// Auto-resize textarea
+document.getElementById("promptInput").addEventListener("input", function() {
+  this.style.height = "auto";
+  this.style.height = Math.min(this.scrollHeight, 200) + "px";
+});
+</script>
+</body>
+</html>
